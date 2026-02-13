@@ -1,0 +1,15 @@
+{
+  "buildCommand": "yarn",
+  "framework": null,
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "bun@1.0.29"
+    }
+  },
+  "env": {
+    "DISCORD_WEBHOOK_URL": {
+      "description": "Discord webhook URL for sending notifications",
+      "required": true
+    }
+  }
+}

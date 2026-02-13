@@ -1,0 +1,26 @@
+{
+  "name": "plex-monitor",
+  "version": "1.0.0",
+  "description": "Plex webhook service that sends Discord notifications for new content",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "deploy": "vercel --prod",
+    "lint": "eslint . --ext .ts"
+  },
+  "dependencies": {
+    "@vercel/node": "^3.0.21"
+  },
+  "devDependencies": {
+    "@saeris/eslint-config": "^3.2.4",
+    "@types/node": "^24.0.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.3.3",
+    "vercel": "^33.4.1"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "packageManager": "yarn@4.12.0"
+}
