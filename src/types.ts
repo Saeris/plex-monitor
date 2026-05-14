@@ -116,7 +116,9 @@ export interface DiscordEmbed {
 }
 
 export interface DiscordWebhookPayload {
+  flags?: number;
   content?: string;
+  components?: unknown[];
   embeds?: DiscordEmbed[];
   username?: string;
   avatar_url?: string;
