@@ -5,6 +5,12 @@
 
 
 
+
+## 1.1.0
+<sub>2026-05-15</sub>
+
+- Add background server support, stop command, already-running detection, and fix Windows console window and port default prompt
+
 ## 1.0.6
 <sub>2026-05-15</sub>
 
