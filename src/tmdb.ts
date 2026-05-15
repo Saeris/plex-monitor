@@ -1,14 +1,23 @@
-import { TMDBMovieDetailsSchema, TMDBTVSeasonDetailsSchema, TMDBTVSeriesDetailsSchema } from "./schema";
 import * as v from "valibot";
+import { getConfig } from "./config.js";
+import {
+  TMDBMovieDetailsSchema,
+  TMDBTVSeasonDetailsSchema,
+  TMDBTVSeriesDetailsSchema
+} from "./schema.js";
 
 export async function fetchMovieDetails(movieId: string) {
-  const response = await fetch(`https://api.themoviedb.org/3/movie/${movieId}`, {
-    method: "GET",
-    headers: {
-      accept: "application/json",
-      Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
-    },
-  });
+  const { tmdbApiKey } = getConfig();
+  const response = await fetch(
+    `https://api.themoviedb.org/3/movie/${movieId}?append_to_response=credits,videos`,
+    {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${tmdbApiKey}`
+      }
+    }
+  );
   if (!response.ok) {
     throw new Error(`TMDB API error: ${response.status}`);
   }
@@ -20,12 +29,13 @@ export async function fetchMovieDetails(movieId: string) {
 }
 
 export async function fetchTVSeriesDetails(seriesId: string) {
+  const { tmdbApiKey } = getConfig();
   const response = await fetch(`https://api.themoviedb.org/3/tv/${seriesId}`, {
     method: "GET",
     headers: {
       accept: "application/json",
-      Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
-    },
+      Authorization: `Bearer ${tmdbApiKey}`
+    }
   });
   if (!response.ok) {
     throw new Error(`TMDB API error: ${response.status}`);
@@ -37,14 +47,21 @@ export async function fetchTVSeriesDetails(seriesId: string) {
   return result.output;
 }
 
-export async function fetchTVSeasonDetails(seriesId: string, seasonNumber: number) {
-  const response = await fetch(`https://api.themoviedb.org/3/tv/${seriesId}/season/${seasonNumber}`, {
-    method: "GET",
-    headers: {
-      accept: "application/json",
-      Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
-    },
-  });
+export async function fetchTVSeasonDetails(
+  seriesId: string,
+  seasonNumber: number
+) {
+  const { tmdbApiKey } = getConfig();
+  const response = await fetch(
+    `https://api.themoviedb.org/3/tv/${seriesId}/season/${seasonNumber}`,
+    {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${tmdbApiKey}`
+      }
+    }
+  );
   if (!response.ok) {
     throw new Error(`TMDB API error: ${response.status}`);
   }

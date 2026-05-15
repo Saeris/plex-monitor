@@ -3,12 +3,20 @@ import { defineConfig } from "vite-plus";
 export default defineConfig({
   // ── Linting (Oxlint) ────────────────────────────────────────────────
   lint: {
-    plugins: ["oxc", "typescript", "unicorn", "react", "jsx-a11y", "import", "promise"],
+    plugins: [
+      "oxc",
+      "typescript",
+      "unicorn",
+      "react",
+      "jsx-a11y",
+      "import",
+      "promise"
+    ],
     categories: {
-      correctness: "warn",
+      correctness: "warn"
     },
     env: {
-      builtin: true,
+      builtin: true
     },
     rules: {
       "import-x/export": "error",
@@ -32,8 +40,8 @@ export default defineConfig({
       "promise/catch-or-return": [
         "error",
         {
-          terminationMethod: ["catch", "finally"],
-        },
+          terminationMethod: ["catch", "finally"]
+        }
       ],
       "promise/no-multiple-resolved": "error",
       "promise/no-nesting": "warn",
@@ -44,20 +52,29 @@ export default defineConfig({
       "promise/param-names": "error",
       "promise/prefer-await-to-callbacks": "error",
       "promise/prefer-await-to-then": "error",
-      "promise/valid-params": "error",
+      "promise/valid-params": "error"
     },
     settings: {
-      "import-x/extensions": [".cjs", ".mjs", ".js", ".jsx", ".cts", ".mts", ".ts", ".tsx"],
+      "import-x/extensions": [
+        ".cjs",
+        ".mjs",
+        ".js",
+        ".jsx",
+        ".cts",
+        ".mts",
+        ".ts",
+        ".tsx"
+      ],
       "import-x/resolver-next": [
         {
           interfaceVersion: 3,
-          name: "eslint-import-resolver-typescript",
+          name: "eslint-import-resolver-typescript"
         },
         {
           interfaceVersion: 3,
-          name: "eslint-plugin-import-x:node",
-        },
-      ],
+          name: "eslint-plugin-import-x:node"
+        }
+      ]
     },
     overrides: [
       {
@@ -67,8 +84,8 @@ export default defineConfig({
             "warn",
             {
               allowImplicit: true,
-              checkForEach: true,
-            },
+              checkForEach: true
+            }
           ],
           "constructor-super": "error",
           "for-direction": "error",
@@ -91,8 +108,8 @@ export default defineConfig({
           "no-duplicate-imports": [
             "error",
             {
-              includeExports: true,
-            },
+              includeExports: true
+            }
           ],
           "no-empty-character-class": "error",
           "no-empty-pattern": "error",
@@ -128,8 +145,8 @@ export default defineConfig({
           "no-use-before-define": [
             "error",
             {
-              functions: false,
-            },
+              functions: false
+            }
           ],
           "no-useless-backreference": "error",
           "use-isnan": "error",
@@ -148,8 +165,8 @@ export default defineConfig({
           "@typescript-eslint/dot-notation": [
             "error",
             {
-              allowKeywords: true,
-            },
+              allowKeywords: true
+            }
           ],
           eqeqeq: ["error", "smart"],
           "func-names": "off",
@@ -157,8 +174,8 @@ export default defineConfig({
             "error",
             "declaration",
             {
-              allowArrowFunctions: true,
-            },
+              allowArrowFunctions: true
+            }
           ],
           "grouped-accessor-pairs": "error",
           "guard-for-in": "error",
@@ -174,16 +191,16 @@ export default defineConfig({
           "new-cap": [
             "error",
             {
-              newIsCap: true,
-            },
+              newIsCap: true
+            }
           ],
           "no-alert": "error",
           "no-array-constructor": "off",
           "no-bitwise": [
             "error",
             {
-              allow: ["~"],
-            },
+              allow: ["~"]
+            }
           ],
           "no-caller": "error",
           "no-case-declarations": "error",
@@ -196,8 +213,8 @@ export default defineConfig({
           "no-empty-function": [
             "error",
             {
-              allow: ["arrowFunctions", "constructors"],
-            },
+              allow: ["arrowFunctions", "constructors"]
+            }
           ],
           "no-empty-static-block": "error",
           "no-eq-null": "error",
@@ -255,8 +272,8 @@ export default defineConfig({
           "no-void": [
             "error",
             {
-              allowAsStatement: true,
-            },
+              allowAsStatement: true
+            }
           ],
           "no-warning-comments": "off",
           "no-with": "error",
@@ -280,30 +297,30 @@ export default defineConfig({
           "symbol-description": "error",
           "vars-on-top": "error",
           yoda: "error",
-          "unicode-bom": "off",
-        },
+          "unicode-bom": "off"
+        }
       },
       {
         files: ["**/*.{spec,test}.{j,t}s?(x)"],
         rules: {
           "no-console": "off",
-          "no-undefined": "off",
-        },
+          "no-undefined": "off"
+        }
       },
       {
         files: ["*.stories.{j,t}s?(x)", "*.config.{js,ts,mjs,mts,cjs,cts}"],
         rules: {
           "import-x/no-default-export": "off",
-          "import-x/no-anonymous-default-export": "off",
-        },
+          "import-x/no-anonymous-default-export": "off"
+        }
       },
       {
         files: ["**/*.{j,t}s?(x)"],
         rules: {
           "jsx-a11y/anchor-ambiguous-text": "off",
           "jsx-a11y/no-aria-hidden-on-focusable": "warn",
-          "jsx-a11y/prefer-tag-over-role": "warn",
-        },
+          "jsx-a11y/prefer-tag-over-role": "warn"
+        }
       },
       {
         files: ["**/*.?(m|c)ts?(x)"],
@@ -312,8 +329,8 @@ export default defineConfig({
           "@typescript-eslint/array-type": [
             "error",
             {
-              default: "array-simple",
-            },
+              default: "array-simple"
+            }
           ],
           "@typescript-eslint/ban-tslint-comment": "error",
           "@typescript-eslint/class-literal-property-style": "off",
@@ -322,17 +339,20 @@ export default defineConfig({
           "@typescript-eslint/consistent-type-assertions": [
             "error",
             {
-              assertionStyle: "as",
-            },
+              assertionStyle: "as"
+            }
           ],
-          "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
+          "@typescript-eslint/consistent-type-definitions": [
+            "error",
+            "interface"
+          ],
           "@typescript-eslint/no-confusing-non-null-assertion": "error",
           "@typescript-eslint/no-inferrable-types": [
             "warn",
             {
               ignoreParameters: true,
-              ignoreProperties: true,
-            },
+              ignoreProperties: true
+            }
           ],
           "@typescript-eslint/prefer-for-of": "warn",
           "@typescript-eslint/prefer-function-type": "off",
@@ -345,14 +365,14 @@ export default defineConfig({
           "@typescript-eslint/no-empty-object-type": [
             "warn",
             {
-              allowInterfaces: "with-single-extends",
-            },
+              allowInterfaces: "with-single-extends"
+            }
           ],
           "@typescript-eslint/no-explicit-any": [
             "warn",
             {
-              ignoreRestArgs: true,
-            },
+              ignoreRestArgs: true
+            }
           ],
           "@typescript-eslint/no-extra-non-null-assertion": "error",
           "@typescript-eslint/no-extraneous-class": "off",
@@ -363,8 +383,8 @@ export default defineConfig({
             "error",
             {
               allowDeclarations: true,
-              allowDefinitionFiles: true,
-            },
+              allowDefinitionFiles: true
+            }
           ],
           "@typescript-eslint/no-non-null-asserted-nullish-coalescing": "error",
           "@typescript-eslint/no-non-null-asserted-optional-chain": "error",
@@ -372,7 +392,8 @@ export default defineConfig({
           "@typescript-eslint/no-require-imports": "warn",
           "@typescript-eslint/no-restricted-types": "off",
           "@typescript-eslint/no-this-alias": "error",
-          "@typescript-eslint/no-unnecessary-parameter-property-assignment": "warn",
+          "@typescript-eslint/no-unnecessary-parameter-property-assignment":
+            "warn",
           "@typescript-eslint/no-unnecessary-type-constraint": "warn",
           "@typescript-eslint/no-unsafe-declaration-merging": "error",
           "@typescript-eslint/no-unsafe-function-type": "error",
@@ -386,16 +407,16 @@ export default defineConfig({
           "@typescript-eslint/triple-slash-reference": [
             "error",
             {
-              types: "prefer-import",
-            },
+              types: "prefer-import"
+            }
           ],
           "@typescript-eslint/unified-signatures": "off",
           "class-methods-use-this": [
             "warn",
             {
               ignoreOverrideMethods: true,
-              ignoreClassesThatImplementAnInterface: "public-fields",
-            },
+              ignoreClassesThatImplementAnInterface: "public-fields"
+            }
           ],
           "default-param-last": "error",
           "init-declarations": "off",
@@ -413,18 +434,18 @@ export default defineConfig({
             {
               vars: "local",
               args: "none",
-              ignoreRestSiblings: true,
-            },
+              ignoreRestSiblings: true
+            }
           ],
           "no-use-before-define": [
             "error",
             {
               functions: true,
-              classes: true,
-            },
+              classes: true
+            }
           ],
-          "no-useless-constructor": "error",
-        },
+          "no-useless-constructor": "error"
+        }
       },
       {
         files: ["**/*.ts?(x)"],
@@ -446,14 +467,14 @@ export default defineConfig({
           "no-unused-vars": "off",
           "no-use-before-define": "off",
           "no-useless-constructor": "off",
-          "require-await": "off",
-        },
+          "require-await": "off"
+        }
       },
       {
         files: ["**/*.{spec,test}.{j,t}s?(x)"],
         rules: {
-          "@typescript-eslint/explicit-function-return-type": "off",
-        },
+          "@typescript-eslint/explicit-function-return-type": "off"
+        }
       },
       {
         files: ["**/*.?(m|c)ts?(x)"],
@@ -465,8 +486,8 @@ export default defineConfig({
             "error",
             {
               ignoreConditionalTests: true,
-              ignoreMixedLogicalExpressions: true,
-            },
+              ignoreMixedLogicalExpressions: true
+            }
           ],
           "@typescript-eslint/prefer-optional-chain": "error",
           "@typescript-eslint/prefer-regexp-exec": "error",
@@ -478,16 +499,16 @@ export default defineConfig({
           "@typescript-eslint/no-confusing-void-expression": [
             "error",
             {
-              ignoreArrowShorthand: true,
-            },
+              ignoreArrowShorthand: true
+            }
           ],
           "@typescript-eslint/no-deprecated": "warn",
           "@typescript-eslint/no-duplicate-type-constituents": "error",
           "@typescript-eslint/no-floating-promises": [
             "error",
             {
-              ignoreIIFE: true,
-            },
+              ignoreIIFE: true
+            }
           ],
           "@typescript-eslint/no-for-in-array": "error",
           "@typescript-eslint/no-meaningless-void-operator": "error",
@@ -522,8 +543,8 @@ export default defineConfig({
               checkArrowFunctions: true,
               checkFunctionDeclarations: true,
               checkFunctionExpressions: true,
-              checkMethodDeclarations: true,
-            },
+              checkMethodDeclarations: true
+            }
           ],
           "@typescript-eslint/related-getter-setter-pairs": "warn",
           "@typescript-eslint/require-array-sort-compare": "warn",
@@ -535,8 +556,8 @@ export default defineConfig({
           "@typescript-eslint/unbound-method": [
             "warn",
             {
-              ignoreStatic: true,
-            },
+              ignoreStatic: true
+            }
           ],
           "@typescript-eslint/use-unknown-in-catch-callback-variable": "warn",
           "@typescript-eslint/dot-notation": "off",
@@ -548,8 +569,8 @@ export default defineConfig({
           "prefer-promise-reject-errors": "off",
           "@typescript-eslint/prefer-promise-reject-errors": "error",
           "require-await": "off",
-          "@typescript-eslint/require-await": "error",
-        },
+          "@typescript-eslint/require-await": "error"
+        }
       },
       {
         files: ["**/*.{spec,test}.{j,t}s?(x)"],
@@ -559,8 +580,8 @@ export default defineConfig({
           "vitest/expect-expect": [
             "error",
             {
-              assertFunctionNames: ["expect", "expect*"],
-            },
+              assertFunctionNames: ["expect", "expect*"]
+            }
           ],
           "vitest/max-expects": "off",
           "vitest/max-nested-describe": "off",
@@ -579,8 +600,8 @@ export default defineConfig({
           "vitest/no-large-snapshots": [
             "warn",
             {
-              maxSize: 32,
-            },
+              maxSize: 32
+            }
           ],
           "vitest/no-mocks-import": "error",
           "vitest/no-restricted-matchers": "off",
@@ -613,15 +634,15 @@ export default defineConfig({
           "vitest/require-to-throw-message": "off",
           "vitest/require-top-level-describe": "error",
           "vitest/valid-describe-callback": "error",
-          "vitest/valid-expect": "error",
+          "vitest/valid-expect": "error"
         },
-        plugins: ["vitest"],
-      },
+        plugins: ["vitest"]
+      }
     ],
     options: {
       typeAware: true,
-      typeCheck: true,
-    },
+      typeCheck: true
+    }
   },
   // ── Formatting (Oxfmt) ──────────────────────────────────────────────
   fmt: {
@@ -633,13 +654,29 @@ export default defineConfig({
     trailingComma: "none",
     bracketSpacing: true,
     jsxBracketSameLine: false,
-    sortPackageJson: false,
+    sortPackageJson: false
   },
   // ── Testing (Vitest) ────────────────────────────────────────────────
   test: {
     include: ["**/*.{test,spec}.{ts,tsx}"],
     exclude: ["**/node_modules/**", "**/dist/**"],
-    environment: "jsdom",
-    passWithNoTests: true,
+    environment: "node",
+    setupFiles: ["./vitest.setup.ts"],
+    passWithNoTests: true
   },
+  // ── Executable build (tsdown) ────────────────────────────────────────
+  pack: {
+    entry: ["src/cli.ts"],
+    platform: "node",
+    exe: {
+      fileName: "plxm",
+      targets: [
+        { platform: "linux", arch: "x64", nodeVersion: "26.1.0" },
+        { platform: "linux", arch: "arm64", nodeVersion: "26.1.0" },
+        { platform: "darwin", arch: "x64", nodeVersion: "26.1.0" },
+        { platform: "darwin", arch: "arm64", nodeVersion: "26.1.0" },
+        { platform: "win", arch: "x64", nodeVersion: "26.1.0" }
+      ]
+    }
+  }
 });

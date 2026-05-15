@@ -13,37 +13,69 @@ import * as v from "valibot";
 
 const GenreSchema = v.object({
   id: v.number(),
-  name: v.string(),
+  name: v.string()
 });
 
 const ProductionCompanySchema = v.looseObject({
   id: v.number(),
   logo_path: v.nullable(v.string()),
   name: v.string(),
-  origin_country: v.string(),
+  origin_country: v.string()
 });
 
 const ProductionCountrySchema = v.object({
   iso_3166_1: v.string(),
-  name: v.string(),
+  name: v.string()
 });
 
 const SpokenLanguageSchema = v.object({
   english_name: v.string(),
   iso_639_1: v.string(),
-  name: v.string(),
+  name: v.string()
 });
 
 const CollectionSchema = v.looseObject({
   id: v.number(),
   name: v.string(),
   poster_path: v.nullable(v.string()),
-  backdrop_path: v.nullable(v.string()),
+  backdrop_path: v.nullable(v.string())
 });
 
 // ============================================================================
 // MOVIE DETAILS
 // ============================================================================
+
+const CastMemberSchema = v.looseObject({
+  id: v.number(),
+  name: v.string(),
+  character: v.string(),
+  order: v.number()
+});
+
+const CrewMemberSchema = v.looseObject({
+  id: v.number(),
+  name: v.string(),
+  job: v.string(),
+  department: v.string()
+});
+
+const CreditsSchema = v.looseObject({
+  cast: v.array(CastMemberSchema),
+  crew: v.array(CrewMemberSchema)
+});
+
+const VideoSchema = v.looseObject({
+  id: v.string(),
+  key: v.string(),
+  name: v.string(),
+  site: v.string(),
+  type: v.string(),
+  official: v.boolean()
+});
+
+const VideosSchema = v.looseObject({
+  results: v.array(VideoSchema)
+});
 
 export const TMDBMovieDetailsSchema = v.looseObject({
   adult: v.boolean(),
@@ -72,6 +104,8 @@ export const TMDBMovieDetailsSchema = v.looseObject({
   video: v.boolean(),
   vote_average: v.number(),
   vote_count: v.number(),
+  credits: v.optional(CreditsSchema),
+  videos: v.optional(VideosSchema)
 });
 
 export type TMDBMovieDetails = v.InferOutput<typeof TMDBMovieDetailsSchema>;
@@ -86,14 +120,14 @@ const CreatedBySchema = v.looseObject({
   name: v.string(),
   original_name: v.string(),
   gender: v.number(),
-  profile_path: v.nullable(v.string()),
+  profile_path: v.nullable(v.string())
 });
 
 const NetworkSchema = v.looseObject({
   id: v.number(),
   logo_path: v.nullable(v.string()),
   name: v.string(),
-  origin_country: v.string(),
+  origin_country: v.string()
 });
 
 const SeasonSchema = v.looseObject({
@@ -104,7 +138,7 @@ const SeasonSchema = v.looseObject({
   overview: v.string(),
   poster_path: v.nullable(v.string()),
   season_number: v.number(),
-  vote_average: v.number(),
+  vote_average: v.number()
 });
 
 const LastEpisodeSchema = v.looseObject({
@@ -120,7 +154,7 @@ const LastEpisodeSchema = v.looseObject({
   runtime: v.nullable(v.number()),
   season_number: v.number(),
   show_id: v.number(),
-  still_path: v.nullable(v.string()),
+  still_path: v.nullable(v.string())
 });
 
 export const TMDBTVSeriesDetailsSchema = v.looseObject({
@@ -155,10 +189,12 @@ export const TMDBTVSeriesDetailsSchema = v.looseObject({
   tagline: v.string(),
   type: v.string(),
   vote_average: v.number(),
-  vote_count: v.number(),
+  vote_count: v.number()
 });
 
-export type TMDBTVSeriesDetails = v.InferOutput<typeof TMDBTVSeriesDetailsSchema>;
+export type TMDBTVSeriesDetails = v.InferOutput<
+  typeof TMDBTVSeriesDetailsSchema
+>;
 
 // ============================================================================
 // TV SEASON DETAILS
@@ -175,7 +211,7 @@ const CrewSchema = v.looseObject({
   name: v.string(),
   original_name: v.string(),
   popularity: v.number(),
-  profile_path: v.nullable(v.string()),
+  profile_path: v.nullable(v.string())
 });
 
 const GuestStarSchema = v.looseObject({
@@ -189,7 +225,7 @@ const GuestStarSchema = v.looseObject({
   name: v.string(),
   original_name: v.string(),
   popularity: v.number(),
-  profile_path: v.nullable(v.string()),
+  profile_path: v.nullable(v.string())
 });
 
 const EpisodeSchema = v.looseObject({
@@ -207,7 +243,7 @@ const EpisodeSchema = v.looseObject({
   vote_average: v.number(),
   vote_count: v.number(),
   crew: v.array(CrewSchema),
-  guest_stars: v.array(GuestStarSchema),
+  guest_stars: v.array(GuestStarSchema)
 });
 
 export const TMDBTVSeasonDetailsSchema = v.looseObject({
@@ -219,10 +255,12 @@ export const TMDBTVSeasonDetailsSchema = v.looseObject({
   id: v.number(),
   poster_path: v.nullable(v.string()),
   season_number: v.number(),
-  vote_average: v.number(),
+  vote_average: v.number()
 });
 
-export type TMDBTVSeasonDetails = v.InferOutput<typeof TMDBTVSeasonDetailsSchema>;
+export type TMDBTVSeasonDetails = v.InferOutput<
+  typeof TMDBTVSeasonDetailsSchema
+>;
 
 /**
  * Valibot schemas for validating Plex webhook payloads
@@ -230,7 +268,7 @@ export type TMDBTVSeasonDetails = v.InferOutput<typeof TMDBTVSeasonDetailsSchema
 
 // Tag schema (used for Directors, Genres, etc.)
 const TagSchema = v.object({
-  tag: v.string(),
+  tag: v.string()
 });
 
 // Plex Metadata schema - using looseObject to allow additional fields Plex may send
@@ -289,20 +327,20 @@ const PlexMetadataSchema = v.looseObject({
   UltraBlurColors: v.optional(v.any()), // Color info for UI
   // Series-specific
   childCount: v.optional(v.number()),
-  leafCount: v.optional(v.number()),
+  leafCount: v.optional(v.number())
 });
 
 // Account schema
 const AccountSchema = v.looseObject({
   id: v.number(),
   thumb: v.string(),
-  title: v.string(),
+  title: v.string()
 });
 
 // Server schema
 const ServerSchema = v.looseObject({
   title: v.string(),
-  uuid: v.string(),
+  uuid: v.string()
 });
 
 // Player schema (optional)
@@ -310,7 +348,7 @@ const PlayerSchema = v.looseObject({
   local: v.boolean(),
   publicAddress: v.string(),
   title: v.string(),
-  uuid: v.string(),
+  uuid: v.string()
 });
 
 // Main Plex Webhook Payload schema
@@ -321,7 +359,7 @@ export const PlexWebhookPayloadSchema = v.looseObject({
   Account: AccountSchema,
   Server: ServerSchema,
   Player: v.optional(PlayerSchema),
-  Metadata: PlexMetadataSchema,
+  Metadata: PlexMetadataSchema
 });
 
 export type PlexWebhookPayload = v.InferOutput<typeof PlexWebhookPayloadSchema>;
