@@ -189,7 +189,9 @@ function taskXml(binaryPath: string): string {
 
 function installWindows(binaryPath: string): void {
   const xmlPath = path.join(os.tmpdir(), `${TASK_NAME}-task.xml`);
-  fs.writeFileSync(xmlPath, taskXml(binaryPath), "utf16le");
+  const bom = Buffer.from([0xff, 0xfe]);
+  const content = Buffer.from(taskXml(binaryPath), "utf16le");
+  fs.writeFileSync(xmlPath, Buffer.concat([bom, content]));
   exec(`schtasks /Create /TN "${TASK_NAME}" /XML "${xmlPath}" /F`);
   exec(`schtasks /Run /TN "${TASK_NAME}"`);
   fs.unlinkSync(xmlPath);
