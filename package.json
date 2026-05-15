@@ -11,10 +11,10 @@
     "notifications",
     "media"
   ],
-  "homepage": "https://github.com/saeris/plex-monitor#readme",
+  "homepage": "https://github.com/Saeris/plex-monitor#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/saeris/plex-monitor.git"
+    "url": "https://github.com/Saeris/plex-monitor.git"
   },
   "publishConfig": {
     "access": "public",
