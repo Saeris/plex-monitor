@@ -90,8 +90,7 @@ permissions:
   id-token: write
 
 jobs:
-  release:
-    ...
+  release: ...
 ```
 
 ### Disable Yarn colors on the release step
@@ -115,7 +114,7 @@ Bumpy generates `CHANGELOG.md` with its own formatting. Oxfmt (via `vp check`) w
 
 ```ts
 fmt: {
-  ignorePatterns: ["CHANGELOG.md"]
+  ignorePatterns: ["CHANGELOG.md"];
 }
 ```
 
