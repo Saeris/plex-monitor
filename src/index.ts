@@ -1,9 +1,10 @@
+import { node } from "@elysiajs/node";
 import { Elysia } from "elysia";
-import { createDiscordMessage, sendDiscordWebhook } from "./discord";
-import { PlexWebhookPayloadSchema } from "./schema";
 import * as v from "valibot";
+import { enqueue } from "./queue.js";
+import { PlexWebhookPayloadSchema } from "./schema.js";
 
-const app = new Elysia({ name: "plex-discord-webhook" })
+const app = new Elysia({ name: "plex-discord-webhook", adapter: node() })
   .onError(({ code, error, set }) => {
     if (error instanceof Error) {
       console.error("Error:", { code, error: error.message });
@@ -19,8 +20,8 @@ const app = new Elysia({ name: "plex-discord-webhook" })
           path: issue.path?.map(([key]: [key: string]) => key).join("."),
           message: issue.message,
           expected: issue.expected,
-          received: issue.received,
-        })),
+          received: issue.received
+        }))
       };
     }
 
@@ -29,7 +30,7 @@ const app = new Elysia({ name: "plex-discord-webhook" })
       set.status = 400;
       return {
         error: "Validation Error",
-        message: error.message,
+        message: error.message
       };
     }
 
@@ -37,7 +38,7 @@ const app = new Elysia({ name: "plex-discord-webhook" })
       set.status = 404;
       return {
         error: "Not Found",
-        message: "Endpoint not found",
+        message: "Endpoint not found"
       };
     }
 
@@ -45,7 +46,7 @@ const app = new Elysia({ name: "plex-discord-webhook" })
     set.status = 500;
     return {
       error: "Internal Server Error",
-      message: error instanceof Error ? error.message : "Unknown error",
+      message: error instanceof Error ? error.message : "Unknown error"
     };
   })
   .post(
@@ -55,7 +56,7 @@ const app = new Elysia({ name: "plex-discord-webhook" })
         set.status = 400;
         return {
           error: "Bad Request",
-          message: "No payload found in form data",
+          message: "No payload found in form data"
         };
       }
 
@@ -66,7 +67,7 @@ const app = new Elysia({ name: "plex-discord-webhook" })
         return {
           success: false,
           message: "Event type not supported",
-          event: payload.event,
+          event: payload.event
         };
       }
 
@@ -76,41 +77,28 @@ const app = new Elysia({ name: "plex-discord-webhook" })
         return {
           success: false,
           message: "Media type not supported",
-          type: payload.Metadata.type,
+          type: payload.Metadata.type
         };
       }
 
       console.log(
-        `Processing update for media:/n/t${
-          payload.Metadata.type === "movie" ? `🎬 ` : `📺 `
-        }${payload.Metadata.title}`,
+        `Queued: ${payload.Metadata.type === "movie" ? "🎬" : "📺"} ${payload.Metadata.title}`
       );
 
-      // Get Discord webhook URL from environment
-      const discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL;
-      if (!discordWebhookUrl) {
-        set.status = 500;
-        return {
-          error: "Internal Server Error",
-          message: "DISCORD_WEBHOOK_URL environment variable not set",
-        };
-      }
-
-      // Create and send Discord message
-      const discordPayload = createDiscordMessage(payload);
-      await sendDiscordWebhook(discordWebhookUrl, await discordPayload);
+      enqueue(payload);
+      set.status = 202;
 
       return {
         success: true,
-        message: "Notification sent to Discord",
+        message: "Queued for Discord notification"
       };
     },
     {
       body: v.looseObject({
-        payload: PlexWebhookPayloadSchema,
-      }),
-    },
+        payload: PlexWebhookPayloadSchema
+      })
+    }
   );
 
-export default app;
+export { app };
 export type App = typeof app;
