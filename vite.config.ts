@@ -674,7 +674,8 @@ export default defineConfig({
       format: ["esm"],
       outDir: "dist",
       clean: true,
-      minify: true
+      minify: true,
+      banner: { js: "#!/usr/bin/env node" }
     },
     // Standalone executables for direct download
     {
