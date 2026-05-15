@@ -27,9 +27,38 @@ jobs:
       - id: result
         run: echo "version=${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.version }}" >> $GITHUB_OUTPUT
 
+  bump:
+    name: Bump
+    needs: [changes]
+    if: needs.changes.outputs.version == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: "26"
+          cache: true
+
+      - run: vp dlx @varlock/bumpy ci plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - run: vp dlx @varlock/bumpy ci release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUMPY_GH_TOKEN: ${{ secrets.BUMPY_GH_TOKEN }}
+          NO_COLOR: "1"
+          YARN_ENABLE_COLORS: "false"
+
   pack:
     name: Pack (${{ matrix.runner }})
-    needs: changes
+    needs: [changes]
     if: needs.changes.outputs.version == 'true'
     strategy:
       matrix:
@@ -60,7 +89,7 @@ jobs:
           path: build/plxm-*
           if-no-files-found: error
 
-  release:
+  publish:
     name: Publish
     needs: [changes, pack]
     if: needs.changes.outputs.version == 'true'
@@ -68,7 +97,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      id-token: write # required for npm OIDC trusted publishing
+      id-token: write
     steps:
       - uses: actions/checkout@v6
         with:
