@@ -1,6 +1,12 @@
 # Changelog
 
 
+
+## 1.0.3
+<sub>2026-05-15</sub>
+
+- Add shebang to JS bundle so npm global installs are executable on all platforms
+
 ## 1.0.2
 <sub>2026-05-15</sub>
 
