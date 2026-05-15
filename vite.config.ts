@@ -654,7 +654,8 @@ export default defineConfig({
     trailingComma: "none",
     bracketSpacing: true,
     jsxBracketSameLine: false,
-    sortPackageJson: false
+    sortPackageJson: false,
+    ignorePatterns: ["CHANGELOG.md"]
   },
   // ── Testing (Vitest) ────────────────────────────────────────────────
   test: {
