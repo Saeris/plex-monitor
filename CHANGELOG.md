@@ -4,6 +4,12 @@
 
 
 
+
+## 1.0.6
+<sub>2026-05-15</sub>
+
+- Fix malformed XML error when registering Windows Task Scheduler autostart — write UTF-16 BOM before task XML content
+
 ## 1.0.5
 <sub>2026-05-15</sub>
 
