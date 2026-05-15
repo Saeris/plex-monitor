@@ -670,13 +670,24 @@ export default defineConfig({
     platform: "node",
     exe: {
       fileName: "plxm",
-      targets: [
-        { platform: "linux", arch: "x64", nodeVersion: "26.1.0" },
-        { platform: "linux", arch: "arm64", nodeVersion: "26.1.0" },
-        { platform: "darwin", arch: "x64", nodeVersion: "26.1.0" },
-        { platform: "darwin", arch: "arm64", nodeVersion: "26.1.0" },
-        { platform: "win", arch: "x64", nodeVersion: "26.1.0" }
-      ]
+      targets: process.env.CI
+        ? [
+            { platform: "linux", arch: "x64", nodeVersion: "26.1.0" },
+            { platform: "linux", arch: "arm64", nodeVersion: "26.1.0" },
+            { platform: "darwin", arch: "x64", nodeVersion: "26.1.0" },
+            { platform: "darwin", arch: "arm64", nodeVersion: "26.1.0" },
+            { platform: "win", arch: "x64", nodeVersion: "26.1.0" }
+          ]
+        : [
+            {
+              platform:
+                ({ win32: "win", darwin: "darwin", linux: "linux" } as const)[
+                  process.platform as "win32" | "darwin" | "linux"
+                ] ?? "linux",
+              arch: process.arch as "x64" | "arm64",
+              nodeVersion: "26.1.0"
+            }
+          ]
     }
   }
 });
