@@ -675,7 +675,8 @@ export default defineConfig({
       outDir: "dist",
       clean: true,
       minify: true,
-      banner: { js: "#!/usr/bin/env node" }
+      banner: { js: "#!/usr/bin/env node" },
+      outputOptions: { inlineDynamicImports: true }
     },
     // Standalone executables for direct download — skipped when building for npm publish
     ...(process.env.BUILD_BUNDLE_ONLY
