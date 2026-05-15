@@ -82,8 +82,9 @@ Lessons learned from setting up Bumpy for versioning, changelog generation, and 
 }
 ```
 
-- `"changelog": "github"` — generates rich release notes with commit SHAs and author links (matches Changesets-style output)
-- `"githubRelease": true` — tells Bumpy to create the GitHub release body from bump file summaries; without this, releases are created with no notes
+- `"changelog": "github"` — generates rich release notes with PR links and contributor attribution in `CHANGELOG.md`
+
+> **Known Bumpy bug:** GitHub release bodies are currently empty even with `"changelog": "github"`. Bump files are consumed when the version PR is merged, so by publish time there is nothing to populate the release body. A fix is pending upstream in `@varlock/bumpy` ([fix-release-tags-and-notes](https://github.com/dmno-dev/bumpy/blob/main/.bumpy/fix-release-tags-and-notes.md)).
 
 Run once to configure the `BUMPY_GH_TOKEN` secret needed for Bumpy to trigger CI on version PRs:
 
