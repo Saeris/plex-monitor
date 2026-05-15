@@ -905,8 +905,8 @@ __metadata:
     valibot: "npm:^1.2.0"
     vite-plus: "npm:latest"
   bin:
-    plex-monitor: ./src/cli.ts
-    plxm: ./src/cli.ts
+    plex-monitor: ./dist/cli.mjs
+    plxm: ./dist/cli.mjs
   languageName: unknown
   linkType: soft
 
