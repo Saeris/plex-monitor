@@ -3,6 +3,12 @@
 
 
 
+
+## 1.0.5
+<sub>2026-05-15</sub>
+
+- Inline all chunks into single dist/cli.mjs so npm install produces a self-contained executable
+
 ## 1.0.4
 <sub>2026-05-15</sub>
 
