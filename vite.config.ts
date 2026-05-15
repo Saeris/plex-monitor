@@ -677,32 +677,41 @@ export default defineConfig({
       minify: true,
       banner: { js: "#!/usr/bin/env node" }
     },
-    // Standalone executables for direct download
-    {
-      entry: ["src/cli.ts"],
-      platform: "node",
-      exe: {
-        fileName: "plxm",
-        targets: process.env.PACK_TARGETS
-          ? process.env.PACK_TARGETS.split(",").map((t) => {
-              const [platform, arch] = t.split("-") as [string, string];
-              return {
-                platform: platform as "linux" | "darwin" | "win",
-                arch: arch as "x64" | "arm64",
-                nodeVersion: "26.1.0"
-              };
-            })
-          : [
-              {
-                platform:
-                  ({ win32: "win", darwin: "darwin", linux: "linux" } as const)[
-                    process.platform as "win32" | "darwin" | "linux"
-                  ] ?? "linux",
-                arch: process.arch as "x64" | "arm64",
-                nodeVersion: "26.1.0"
-              }
-            ]
-      }
-    }
+    // Standalone executables for direct download — skipped when building for npm publish
+    ...(process.env.BUILD_BUNDLE_ONLY
+      ? []
+      : [
+          {
+            entry: ["src/cli.ts"],
+            platform: "node" as const,
+            exe: {
+              fileName: "plxm",
+              targets: process.env.PACK_TARGETS
+                ? process.env.PACK_TARGETS.split(",").map((t) => {
+                    const [platform, arch] = t.split("-") as [string, string];
+                    return {
+                      platform: platform as "linux" | "darwin" | "win",
+                      arch: arch as "x64" | "arm64",
+                      nodeVersion: "26.1.0"
+                    };
+                  })
+                : [
+                    {
+                      platform:
+                        (
+                          {
+                            win32: "win",
+                            darwin: "darwin",
+                            linux: "linux"
+                          } as const
+                        )[process.platform as "win32" | "darwin" | "linux"] ??
+                        "linux",
+                      arch: process.arch as "x64" | "arm64",
+                      nodeVersion: "26.1.0"
+                    }
+                  ]
+            }
+          }
+        ])
   ]
 });

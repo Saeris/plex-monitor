@@ -1,5 +1,10 @@
 {
   "$schema": "../node_modules/@varlock/bumpy/config-schema.json",
   "baseBranch": "main",
-  "changelog": "github"
+  "changelog": "github",
+  "packages": {
+    "@saeris/plex-monitor": {
+      "buildCommand": "BUILD_BUNDLE_ONLY=1 vp pack"
+    }
+  }
 }
