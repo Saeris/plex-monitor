@@ -63,6 +63,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           BUMPY_GH_TOKEN: ${{ secrets.BUMPY_GH_TOKEN }}
+          NO_COLOR: "1"
+          FORCE_COLOR: "0"
 
       - uses: actions/download-artifact@v7
         if: steps.plan.outputs.mode == 'publish'
