@@ -21,9 +21,12 @@
     "registry": "https://registry.npmjs.org"
   },
   "type": "module",
+  "files": [
+    "dist/cli.mjs"
+  ],
   "bin": {
-    "plex-monitor": "./src/cli.ts",
-    "plxm": "./src/cli.ts"
+    "plex-monitor": "./dist/cli.mjs",
+    "plxm": "./dist/cli.mjs"
   },
   "scripts": {
     "dev": "node --import tsx/esm --watch src/cli.ts",
