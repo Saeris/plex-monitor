@@ -19,10 +19,6 @@ Listens for [Plex][plex] webhooks and posts richly formatted notifications to [D
 npm install -g @saeris/plex-monitor
 ```
 
-```bash
-yarn global add @saeris/plex-monitor
-```
-
 After installing, run the setup wizard:
 
 ```bash
@@ -52,10 +48,12 @@ Commands:
   upgrade              Download the latest release and restart the service
   init                 Interactive configuration wizard
   config [options]     Update configuration values non-interactively
+  stop                 Stop a running background server
 
 Options:
   -h, --help           Show help
   -v, --version        Show version
+  -d, --detach         Start the server in the background (no subcommand only)
 
 Run `plxm help <command>` for command-specific help.
 ```
@@ -68,13 +66,35 @@ Run `plxm help <command>` for command-specific help.
 2. Registers an autostart service so the server starts on login
 3. Runs `plxm init` if no config file exists yet
 
+### Running the server
+
+Start in the foreground (stays attached to the terminal):
+
+```bash
+plxm
+```
+
+Start in the background (detached, survives closing the terminal):
+
+```bash
+plxm --detach
+```
+
+Stop a background server:
+
+```bash
+plxm stop
+```
+
+If a server is already running, `plxm` will report its endpoint and exit rather than starting a second instance.
+
 ### Configuration
 
 `plxm init` is an interactive wizard that configures:
 
 - **TMDB API key** — fetches poster images, runtime, director, genres, and trailer links. Get one free at [TMDB][tmdb_api_docs].
 - **Discord webhook URL** — the channel where notifications are posted. Create one under _Server Settings → Integrations → Webhooks → New Webhook_. See [Discord's guide][discord_webhook_docs].
-- **Port** — the local port the webhook server listens on (default: `7539`).
+- **Port** — the local port the webhook server listens on (default: `7539`). Press Enter to accept the default.
 
 To update individual values non-interactively:
 

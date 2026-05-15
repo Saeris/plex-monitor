@@ -154,6 +154,11 @@ function uninstallLinux(): void {
 // ── Windows (Task Scheduler) ─────────────────────────────────────────────────
 
 function taskXml(binaryPath: string): string {
+  // Run via node.exe explicitly so Task Scheduler doesn't open a visible
+  // console window when launching the .mjs bundle.
+  const isBundle = binaryPath.endsWith(".mjs");
+  const command = isBundle ? process.execPath : binaryPath;
+  const args = isBundle ? `<Arguments>"${binaryPath}"</Arguments>` : "";
   return `<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <Triggers>
@@ -173,6 +178,7 @@ function taskXml(binaryPath: string): string {
     <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
     <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
     <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+    <Hidden>true</Hidden>
     <RestartOnFailure>
       <Interval>PT1M</Interval>
       <Count>999</Count>
@@ -180,7 +186,8 @@ function taskXml(binaryPath: string): string {
   </Settings>
   <Actions>
     <Exec>
-      <Command>${binaryPath}</Command>
+      <Command>"${command}"</Command>
+      ${args}
     </Exec>
   </Actions>
 </Task>

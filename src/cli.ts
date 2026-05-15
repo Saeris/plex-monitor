@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import mri from "mri";
 import * as p from "@clack/prompts";
 import {
@@ -29,10 +30,12 @@ Commands:
   upgrade              Download the latest release and restart the service
   init                 Interactive configuration wizard
   config [options]     Update configuration values non-interactively
+  stop                 Stop a running background server
 
 Options:
   -h, --help           Show help
   -v, --version        Show version
+  -d, --detach         Start the server in the background (no subcommand only)
 
 Run \`plxm help <command>\` for command-specific help.
 `.trim(),
@@ -82,6 +85,13 @@ Options:
   --port <n>                     Set the port (1–65535)
 
 At least one option is required. Values are merged with the existing config.
+`.trim(),
+
+  stop: `
+Usage: plxm stop
+
+Stops a server started with \`plxm --detach\`. Has no effect if no background
+server is running.
 `.trim()
 };
 
@@ -147,10 +157,12 @@ export async function runInit(): Promise<void> {
   }
 
   const portInput = await p.text({
-    message: "Port to listen on",
+    message: `Port to listen on (default: ${existing?.port ?? DEFAULT_PORT})`,
     placeholder: String(existing?.port ?? DEFAULT_PORT),
     defaultValue: String(existing?.port ?? DEFAULT_PORT),
     validate: (val) => {
+      // Empty string means accept the defaultValue — allow it through.
+      if (!val || val.length === 0) return undefined;
       const n = Number(val);
       if (!Number.isInteger(n) || n < 1 || n > 65535)
         return "Must be a port number between 1 and 65535";
@@ -230,12 +242,27 @@ async function runConfigCommand(argv: string[]): Promise<void> {
   console.log(`Config updated at ${CONFIG_PATH_DISPLAY}`);
 }
 
+async function runStop(): Promise<void> {
+  const { readPid, isRunning, clearPid } = await import("./server.js");
+  const pid = readPid();
+
+  if (pid === null || !isRunning(pid)) {
+    console.log("No background server is running.");
+    clearPid();
+    return;
+  }
+
+  process.kill(pid, "SIGTERM");
+  console.log(`Stopped server (pid ${pid}).`);
+  clearPid();
+}
+
 // ── Entry point ───────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
   const args = mri(process.argv.slice(2), {
-    boolean: ["help", "version"],
-    alias: { h: "help", v: "version" }
+    boolean: ["help", "version", "detach"],
+    alias: { h: "help", v: "version", d: "detach" }
   });
 
   if (args.version) {
@@ -258,6 +285,11 @@ async function main(): Promise<void> {
 
   if (command === "config") {
     await runConfigCommand(process.argv.slice(3));
+    return;
+  }
+
+  if (command === "stop") {
+    await runStop();
     return;
   }
 
@@ -305,6 +337,34 @@ async function main(): Promise<void> {
     console.log("No valid configuration found. Let's set things up first.\n");
     await runInit();
     console.log("");
+  }
+
+  // Check if a server is already running.
+  const { readPid, isRunning } = await import("./server.js");
+  const existingPid = readPid();
+  if (existingPid !== null && isRunning(existingPid)) {
+    const { port } = getConfig();
+    console.log(
+      `Server is already running (pid ${existingPid}) on http://localhost:${port}/`
+    );
+    console.log(`Run \`plxm stop\` to stop it.`);
+    process.exit(0);
+  }
+
+  if (args.detach) {
+    // Spawn a detached child that runs the server, then exit.
+    const child = spawn(process.execPath, [process.argv[1]!], {
+      detached: true,
+      stdio: "ignore",
+      env: process.env
+    });
+    child.unref();
+    const { port } = getConfig();
+    console.log(
+      `Server started in background (pid ${child.pid}) on http://localhost:${port}/`
+    );
+    console.log(`Run \`plxm stop\` to stop it.`);
+    return;
   }
 
   // Dynamically import to ensure config is loaded before the app module initializes.
