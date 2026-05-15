@@ -18,7 +18,7 @@ jobs:
             targets: win-x64
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: voidzero-dev/setup-vp@v1
         with:
@@ -30,7 +30,7 @@ jobs:
           CI: true
           PACK_TARGETS: ${{ matrix.targets }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: executables-${{ matrix.runner }}
           path: build/plxm-*
@@ -45,7 +45,7 @@ jobs:
       pull-requests: write
       id-token: write # required for npm OIDC trusted publishing
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -64,7 +64,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           BUMPY_GH_TOKEN: ${{ secrets.BUMPY_GH_TOKEN }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         if: steps.plan.outputs.mode == 'publish'
         with:
           pattern: executables-*
