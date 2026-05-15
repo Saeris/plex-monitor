@@ -895,7 +895,7 @@ __metadata:
     "@elysiajs/node": "npm:^1.4.5"
     "@saeris/eslint-config": "npm:^3.2.4"
     "@sinclair/typebox": "npm:^0.34.48"
-    "@tsdown/exe": "npm:^0.22.0"
+    "@tsdown/exe": "patch:@tsdown/exe@npm%3A0.22.0#~/.yarn/patches/@tsdown-exe-npm-0.22.0-7094487e5f.patch"
     "@types/node": "npm:^25.2.3"
     "@varlock/bumpy": "npm:^1.7.0"
     elysia: "npm:^1.4.25"
@@ -940,7 +940,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tsdown/exe@npm:^0.22.0":
+"@tsdown/exe@npm:0.22.0":
   version: 0.22.0
   resolution: "@tsdown/exe@npm:0.22.0"
   dependencies:
@@ -950,6 +950,19 @@ __metadata:
   peerDependencies:
     tsdown: 0.22.0
   checksum: 10/ebe7a8a741a1fdb4306353f5c9a64e8f801a6a32a54ef74dd38748b6f7fe7d00282def5eb377a5b7b854816f01a0438b901aa699ba37ca00631d03b8b4643756
+  languageName: node
+  linkType: hard
+
+"@tsdown/exe@patch:@tsdown/exe@npm%3A0.22.0#~/.yarn/patches/@tsdown-exe-npm-0.22.0-7094487e5f.patch":
+  version: 0.22.0
+  resolution: "@tsdown/exe@patch:@tsdown/exe@npm%3A0.22.0#~/.yarn/patches/@tsdown-exe-npm-0.22.0-7094487e5f.patch::version=0.22.0&hash=29ad61"
+  dependencies:
+    obug: "npm:^2.1.1"
+    semver: "npm:^7.7.4"
+    tinyexec: "npm:^1.1.2"
+  peerDependencies:
+    tsdown: 0.22.0
+  checksum: 10/7786106755083891f0c12d7b24da8ee793c2c5ba38ca531530f7ecce6ea85d44d7e47f41b9583ffe35824a151caf22ab9d343169cf5014caac118fafc43541ac
   languageName: node
   linkType: hard
 

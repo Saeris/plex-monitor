@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@saeris/eslint-config": "^3.2.4",
-    "@tsdown/exe": "^0.22.0",
+    "@tsdown/exe": "patch:@tsdown/exe@npm%3A0.22.0#~/.yarn/patches/@tsdown-exe-npm-0.22.0-7094487e5f.patch",
     "@types/node": "^25.2.3",
     "@varlock/bumpy": "^1.7.0",
     "msw": "^2.14.6",

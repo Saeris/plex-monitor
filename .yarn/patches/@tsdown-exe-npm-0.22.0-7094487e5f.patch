@@ -1,0 +1,25 @@
+diff --git a/dist/index.d.mts b/dist/index.d.mts
+index c1a7da0d7c16949bb3f759c970becd73e1680da8..df10e5b2698e0f78fa46e1bbc7978803aedcb9d9 100644
+--- a/dist/index.d.mts
++++ b/dist/index.d.mts
+@@ -1,4 +1,4 @@
+-import { Logger } from "tsdown/internal";
++type Logger = { warn: (msg: string) => void; [key: string]: unknown };
+ 
+ //#region src/platform.d.ts
+ type ExePlatform = "win" | "darwin" | "linux";
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 711c468af4368cdf6b93ad8c700f3b77177cf093..9062d2ed213e88a78e4544d2b17fc14e10c67609 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -5,7 +5,9 @@ import { Buffer } from "node:buffer";
+ import { chmod, mkdir, rename, writeFile } from "node:fs/promises";
+ import { createDebug } from "obug";
+ import { x } from "tinyexec";
+-import { fsExists, fsRemove } from "tsdown/internal";
++import { stat, rm } from "node:fs/promises";
++const fsExists = async (p) => { try { await stat(p); return true; } catch { return false; } };
++const fsRemove = async (p) => { await rm(p, { recursive: true, force: true }); };
+ import satisfies from "semver/functions/satisfies.js";
+ import valid from "semver/functions/valid.js";
+ //#region src/cache.ts
