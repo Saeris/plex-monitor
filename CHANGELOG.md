@@ -2,6 +2,12 @@
 
 
 
+
+## 1.0.4
+<sub>2026-05-15</sub>
+
+- Run JS bundle build before npm publish so dist/cli.mjs is included in the package
+
 ## 1.0.3
 <sub>2026-05-15</sub>
 
