@@ -5,8 +5,40 @@ on:
     branches: [main]
 
 jobs:
+  pack:
+    name: Pack (${{ matrix.runner }})
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            targets: linux-x64,linux-arm64
+          - runner: macos-latest
+            targets: darwin-x64,darwin-arm64
+          - runner: windows-latest
+            targets: win-x64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: "26"
+          cache: true
+
+      - run: vp pack
+        env:
+          CI: true
+          PACK_TARGETS: ${{ matrix.targets }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: executables-${{ matrix.runner }}
+          path: build/plxm-*
+          if-no-files-found: error
+
   release:
     name: Publish
+    needs: pack
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -22,8 +54,6 @@ jobs:
           node-version: "26"
           cache: true
 
-      - run: vp pack
-
       - id: plan
         run: vp dlx @varlock/bumpy ci plan
         env:
@@ -33,6 +63,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           BUMPY_GH_TOKEN: ${{ secrets.BUMPY_GH_TOKEN }}
+
+      - uses: actions/download-artifact@v4
+        if: steps.plan.outputs.mode == 'publish'
+        with:
+          pattern: executables-*
+          path: build
+          merge-multiple: true
 
       - name: Upload executables to GitHub release
         if: steps.plan.outputs.mode == 'publish'

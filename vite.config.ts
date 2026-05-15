@@ -670,14 +670,15 @@ export default defineConfig({
     platform: "node",
     exe: {
       fileName: "plxm",
-      targets: process.env.CI
-        ? [
-            { platform: "linux", arch: "x64", nodeVersion: "26.1.0" },
-            { platform: "linux", arch: "arm64", nodeVersion: "26.1.0" },
-            { platform: "darwin", arch: "x64", nodeVersion: "26.1.0" },
-            { platform: "darwin", arch: "arm64", nodeVersion: "26.1.0" },
-            { platform: "win", arch: "x64", nodeVersion: "26.1.0" }
-          ]
+      targets: process.env.PACK_TARGETS
+        ? process.env.PACK_TARGETS.split(",").map((t) => {
+            const [platform, arch] = t.split("-") as [string, string];
+            return {
+              platform: platform as "linux" | "darwin" | "win",
+              arch: arch as "x64" | "arm64",
+              nodeVersion: "26.1.0"
+            };
+          })
         : [
             {
               platform:
