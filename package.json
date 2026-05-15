@@ -1,6 +1,6 @@
 {
   "name": "@saeris/plex-monitor",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Plex webhook service that sends Discord notifications for new library additions",
   "license": "MIT",
   "author": "Drake Costa <drake@saeris.io> (https://saeris.gg)",
