@@ -363,6 +363,7 @@ export async function runUpgrade(): Promise<void> {
   const dest = getInstalledBinPath();
   const tmp = `${dest}.tmp`;
 
+  fs.mkdirSync(getBinDir(), { recursive: true });
   const buffer = await response.arrayBuffer();
   fs.writeFileSync(tmp, Buffer.from(buffer));
   if (platform !== "win32") fs.chmodSync(tmp, 0o755);

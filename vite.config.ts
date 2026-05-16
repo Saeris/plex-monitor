@@ -683,7 +683,7 @@ export default defineConfig({
       ? []
       : [
           {
-            entry: ["src/cli.ts"],
+            entry: ["src/sea.ts"],
             platform: "node" as const,
             exe: {
               fileName: "plxm",

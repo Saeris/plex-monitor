@@ -14,11 +14,11 @@ const TMDB_API_DOCS = "https://developer.themoviedb.org/docs/getting-started";
 const DISCORD_WEBHOOK_DOCS =
   "https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks";
 
-const VERSION = "1.0.0";
+export const VERSION = "1.0.0";
 
 // ── Help text ─────────────────────────────────────────────────────────────────
 
-const HELP: Record<string, string> = {
+export const HELP: Record<string, string> = {
   "": `
 plxm v${VERSION}
 
@@ -27,7 +27,6 @@ Usage: plxm [command] [options]
 Commands:
   install              Copy binary to PATH, register autostart service, run init if needed
   uninstall            Stop and remove the autostart service
-  upgrade              Download the latest release and restart the service
   init                 Interactive configuration wizard
   config [options]     Update configuration values non-interactively
   stop                 Stop a running background server
@@ -56,13 +55,6 @@ Usage: plxm uninstall
 
 Stops the autostart service and removes its registration. Does not delete
 your config file at ${CONFIG_PATH_DISPLAY}.
-`.trim(),
-
-  upgrade: `
-Usage: plxm upgrade
-
-Downloads the latest release binary for your platform from GitHub, stops the
-running service, replaces the binary, and restarts the service.
 `.trim(),
 
   init: `
@@ -95,8 +87,13 @@ server is running.
 `.trim()
 };
 
-function showHelp(command = ""): void {
-  console.log(HELP[command] ?? `Unknown command: ${command}\n\n${HELP[""]}`);
+export function showHelp(
+  command = "",
+  help: Record<string, string> = HELP
+): void {
+  console.log(
+    help[command] ?? `Unknown command: ${command}\n\n${help[""] ?? ""}`
+  );
 }
 
 // ── Commands ──────────────────────────────────────────────────────────────────
@@ -161,7 +158,6 @@ export async function runInit(): Promise<void> {
     placeholder: String(existing?.port ?? DEFAULT_PORT),
     defaultValue: String(existing?.port ?? DEFAULT_PORT),
     validate: (val) => {
-      // Empty string means accept the defaultValue — allow it through.
       if (!val || val.length === 0) return undefined;
       const n = Number(val);
       if (!Number.isInteger(n) || n < 1 || n > 65535)
@@ -259,7 +255,13 @@ async function runStop(): Promise<void> {
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
-async function main(): Promise<void> {
+export async function main(
+  extraHelp: Record<string, string> = {},
+  extraCommands?: (
+    command: string,
+    args: ReturnType<typeof mri>
+  ) => Promise<boolean>
+): Promise<void> {
   const args = mri(process.argv.slice(2), {
     boolean: ["help", "version", "detach"],
     alias: { h: "help", v: "version", d: "detach" }
@@ -271,10 +273,10 @@ async function main(): Promise<void> {
   }
 
   const command = args._[0];
+  const help = { ...HELP, ...extraHelp };
 
-  // `plxm help [command]` and `plxm [command] --help` both work
   if (command === "help" || args.help) {
-    showHelp(command === "help" ? (args._[1] ?? "") : command);
+    showHelp(command === "help" ? (args._[1] ?? "") : command, help);
     return;
   }
 
@@ -310,15 +312,15 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (command === "upgrade") {
-    const { runUpgrade } = await import("./install.js");
-    await runUpgrade();
-    return;
+  // Delegate to extra commands (e.g. upgrade in SEA build).
+  if (command !== undefined && extraCommands) {
+    const handled = await extraCommands(command, args);
+    if (handled) return;
   }
 
   if (command !== undefined) {
     console.error(`Unknown command: ${command}\n`);
-    showHelp();
+    showHelp("", help);
     process.exit(1);
   }
 
@@ -352,7 +354,6 @@ async function main(): Promise<void> {
   }
 
   if (args.detach) {
-    // Spawn a detached child that runs the server, then exit.
     const child = spawn(process.execPath, [process.argv[1]!], {
       detached: true,
       stdio: "ignore",
@@ -367,7 +368,6 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Dynamically import to ensure config is loaded before the app module initializes.
   const { startServer } = await import("./server.js");
   startServer();
 }
