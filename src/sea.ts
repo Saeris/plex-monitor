@@ -1,5 +1,6 @@
 import type mri from "mri";
 import { main, HELP } from "./cli.js";
+import { checkForUpdate } from "./update-check.js";
 
 const SEA_HELP = {
   ...HELP,
@@ -18,11 +19,24 @@ install, run: npm install -g @saeris/plex-monitor
 `.trim()
 };
 
-await main(SEA_HELP, async (command: string, _args: ReturnType<typeof mri>) => {
-  if (command === "upgrade") {
-    const { runUpgrade } = await import("./install.js");
-    await runUpgrade();
-    return true;
-  }
-  return false;
-});
+const updateAvailable = await checkForUpdate();
+
+await main(
+  SEA_HELP,
+  async (command: string, _args: ReturnType<typeof mri>) => {
+    if (command === "upgrade") {
+      const { runUpgrade } = await import("./install.js");
+      await runUpgrade();
+      return true;
+    }
+    return false;
+  },
+  updateAvailable
+    ? () => {
+        process.stderr.write(
+          `\nUpdate available: ${updateAvailable.latest} — run \`plxm upgrade\` to update\n`
+        );
+        updateAvailable.markPrompted();
+      }
+    : undefined
+);

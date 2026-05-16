@@ -38,7 +38,7 @@ export function isRunning(pid: number): boolean {
   }
 }
 
-export function startServer(): void {
+export function startServer(onReady?: () => void): void {
   const { port } = getConfig();
 
   writePid();
@@ -50,5 +50,6 @@ export function startServer(): void {
     console.log("plex-monitor");
     console.log(`Listening on http://localhost:${port}`);
     console.log(`Webhook endpoint: POST http://localhost:${port}/`);
+    onReady?.();
   });
 }

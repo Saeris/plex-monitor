@@ -260,7 +260,8 @@ export async function main(
   extraCommands?: (
     command: string,
     args: ReturnType<typeof mri>
-  ) => Promise<boolean>
+  ) => Promise<boolean>,
+  onServerStart?: () => void
 ): Promise<void> {
   const args = mri(process.argv.slice(2), {
     boolean: ["help", "version", "detach"],
@@ -369,7 +370,7 @@ export async function main(
   }
 
   const { startServer } = await import("./server.js");
-  startServer();
+  startServer(onServerStart);
 }
 
 await main();
