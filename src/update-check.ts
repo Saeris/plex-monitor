@@ -3,10 +3,13 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { VERSION } from "./cli.js";
 
-const CACHE_FILE = path.join(os.homedir(), ".plxm.update-check.json");
+const CACHE_FILE =
+  process.env["PLXM_UPDATE_CACHE_PATH"] ??
+  path.join(os.homedir(), ".plxm.update-check.json");
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const PROMPT_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const RELEASES_API =
+  process.env["PLXM_RELEASES_API"] ??
   "https://api.github.com/repos/saeris/plex-monitor/releases/latest";
 
 interface UpdateCheckCache {

@@ -373,4 +373,7 @@ export async function main(
   startServer(onServerStart);
 }
 
-await main();
+// Only run when executed directly, not when imported by tests or other modules.
+if (process.env["VITEST"] === undefined) {
+  await main();
+}
