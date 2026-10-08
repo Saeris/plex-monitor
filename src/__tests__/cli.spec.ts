@@ -1,16 +1,48 @@
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
+import pkg from "../../package.json" with { type: "json" };
 import { HELP, VERSION, showHelp } from "../cli.js";
 
-afterEach(() => {
-  vi.restoreAllMocks();
-  vi.unstubAllGlobals();
-});
+// ── Disposable helpers ────────────────────────────────────────────────────────
+
+function captureConsole(): {
+  stdout: () => string;
+  stderr: () => string;
+  [Symbol.dispose](): void;
+} {
+  const outLines: string[] = [];
+  const errLines: string[] = [];
+  vi.stubGlobal("console", {
+    log: (...args: unknown[]) => outLines.push(args.join(" ")),
+    error: (...args: unknown[]) => errLines.push(args.join(" ")),
+    warn: (...args: unknown[]) => errLines.push(args.join(" ")),
+    info: (...args: unknown[]) => outLines.push(args.join(" ")),
+    debug: () => {}
+  });
+  return {
+    stdout: () => outLines.join("\n"),
+    stderr: () => errLines.join("\n"),
+    [Symbol.dispose]() {
+      vi.unstubAllGlobals();
+    }
+  };
+}
+
+function saveArgv(): { [Symbol.dispose](): void } {
+  const saved = process.argv;
+  return {
+    [Symbol.dispose]() {
+      process.argv = saved;
+    }
+  };
+}
 
 // ── Exports ───────────────────────────────────────────────────────────────────
 
 describe("VERSION", () => {
-  it("is a semver string", () => {
-    expect(VERSION).toMatch(/^\d+\.\d+\.\d+$/);
+  // `plxm --version` must identify the build; a hard-coded copy once drifted
+  // out of sync with package.json.
+  it("matches the package.json version", () => {
+    expect(VERSION).toBe(pkg.version);
   });
 });
 
@@ -19,11 +51,6 @@ describe("HELP", () => {
     for (const key of ["", "install", "uninstall", "init", "config", "stop"]) {
       expect(HELP[key]).toBeDefined();
     }
-  });
-
-  it("does not contain an upgrade entry", () => {
-    // upgrade belongs to sea.ts only — must not ship in the npm bundle
-    expect(HELP["upgrade"]).toBeUndefined();
   });
 
   it("root help includes the version string", () => {
@@ -58,150 +85,33 @@ describe("showHelp", () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
     showHelp("notacommand");
     const output = log.mock.calls[0]?.[0] as string;
+    log.mockRestore();
     expect(output).toContain("Unknown command: notacommand");
     expect(output).toContain(HELP[""]);
-    log.mockRestore();
-  });
-
-  it("uses the provided help map instead of HELP when given one", () => {
-    const log = vi.spyOn(console, "log").mockImplementation(() => {});
-    const customHelp = { "": "root help", upgrade: "upgrade help" };
-    showHelp("upgrade", customHelp);
-    expect(log).toHaveBeenCalledWith("upgrade help");
-    log.mockRestore();
-  });
-
-  it("falls back to root from custom map for unknown commands", () => {
-    const log = vi.spyOn(console, "log").mockImplementation(() => {});
-    const customHelp = { "": "root help" };
-    showHelp("unknown", customHelp);
-    const output = log.mock.calls[0]?.[0] as string;
-    expect(output).toContain("Unknown command: unknown");
-    expect(output).toContain("root help");
-    log.mockRestore();
-  });
-
-  it("merges extra help entries without mutating HELP", () => {
-    const extra = { "": "custom root", upgrade: "upgrade text" };
-    const before = { ...HELP };
-    showHelp("upgrade", { ...HELP, ...extra });
-    expect(HELP).toEqual(before);
   });
 });
 
-// ── main() — extraHelp merging ────────────────────────────────────────────────
+// ── main() — unknown commands ─────────────────────────────────────────────────
 
-describe("main() extraHelp", () => {
-  it("includes extra help entries in the merged map passed to showHelp", () => {
-    // We verify indirectly: showHelp with a merged map containing 'upgrade'
-    // should print the upgrade text, not an unknown-command message.
-    const log = vi.spyOn(console, "log").mockImplementation(() => {});
-    const merged = { ...HELP, upgrade: "Usage: plxm upgrade" };
-    showHelp("upgrade", merged);
-    expect(log).toHaveBeenCalledWith("Usage: plxm upgrade");
-    log.mockRestore();
-  });
-
-  it("extra entries do not appear in base HELP", () => {
-    // Confirms that sea.ts adding upgrade to its copy does not pollute HELP
-    const merged = { ...HELP, upgrade: "Usage: plxm upgrade" };
-    expect(HELP["upgrade"]).toBeUndefined();
-    expect(merged["upgrade"]).toBe("Usage: plxm upgrade");
-  });
-});
-
-// ── console capture helper ────────────────────────────────────────────────────
-//
-// Vitest gives each module its own console proxy, so vi.spyOn(console, "log")
-// in a test file does not intercept calls made inside cli.ts. vi.stubGlobal
-// replaces the global console object itself, which IS shared across all module
-// contexts within the same worker.
-
-function captureConsole(): {
-  stdout: () => string;
-  stderr: () => string;
-  restore: () => void;
-} {
-  const outLines: string[] = [];
-  const errLines: string[] = [];
-
-  const stub = {
-    log: (...args: unknown[]) => outLines.push(args.join(" ")),
-    error: (...args: unknown[]) => errLines.push(args.join(" ")),
-    warn: (...args: unknown[]) => errLines.push(args.join(" ")),
-    info: (...args: unknown[]) => outLines.push(args.join(" ")),
-    debug: () => {}
-  };
-  vi.stubGlobal("console", stub);
-
-  return {
-    stdout: () => outLines.join("\n"),
-    stderr: () => errLines.join("\n"),
-    restore: () => vi.unstubAllGlobals()
-  };
-}
-
-// ── main() — extraCommands delegation ─────────────────────────────────────────
-
-describe("main() extraCommands", () => {
-  it("extraCommands handler receives the command name", async () => {
+describe("main() unknown command", () => {
+  // A typo must fail loudly rather than fall through to starting the server.
+  it("reports the command and exits instead of starting the server", async () => {
     const { main } = await import("../cli.js");
-    const received: string[] = [];
-    const argv = process.argv;
-
-    process.argv = ["node", "cli.js", "mycommand"];
-    try {
-      await main({}, async (cmd) => {
-        received.push(cmd);
-        return true;
-      });
-    } finally {
-      process.argv = argv;
-    }
-
-    expect(received).toContain("mycommand");
-  });
-
-  it("falls through to unknown-command when handler returns false", async () => {
-    const { main } = await import("../cli.js");
-    const cap = captureConsole();
-    const argv = process.argv;
+    using cap = captureConsole();
+    using _argv = saveArgv();
     let exitCalled = false;
 
-    process.argv = ["node", "cli.js", "nothandled"];
+    process.argv = ["node", "cli.js", "upgrade"];
     try {
-      await main({}, async () => false);
+      await main();
     } catch (e) {
       // Vitest intercepts process.exit and throws — that confirms exit was called
       exitCalled = true;
       if (!(e instanceof Error) || !e.message.includes("process.exit")) throw e;
-    } finally {
-      cap.restore();
-      process.argv = argv;
     }
 
-    expect(cap.stderr()).toContain("Unknown command: nothandled");
+    expect(cap.stderr()).toContain("Unknown command: upgrade");
     expect(exitCalled).toBe(true);
-  });
-
-  it("skips extraCommands when --version is passed", async () => {
-    const { main } = await import("../cli.js");
-    const cap = captureConsole();
-    const argv = process.argv;
-    let called = false;
-
-    process.argv = ["node", "cli.js", "--version"];
-    try {
-      await main({}, async () => {
-        called = true;
-        return false;
-      });
-    } finally {
-      cap.restore();
-      process.argv = argv;
-    }
-
-    expect(called).toBe(false);
   });
 });
 
@@ -210,32 +120,22 @@ describe("main() extraCommands", () => {
 describe("main() --version", () => {
   it("prints the version and returns without running a command", async () => {
     const { main } = await import("../cli.js");
-    const cap = captureConsole();
-    const argv = process.argv;
+    using cap = captureConsole();
+    using _argv = saveArgv();
 
     process.argv = ["node", "cli.js", "--version"];
-    try {
-      await main();
-    } finally {
-      cap.restore();
-      process.argv = argv;
-    }
+    await main();
 
     expect(cap.stdout()).toContain(`plxm v${VERSION}`);
   });
 
   it("-v alias also prints version", async () => {
     const { main } = await import("../cli.js");
-    const cap = captureConsole();
-    const argv = process.argv;
+    using cap = captureConsole();
+    using _argv = saveArgv();
 
     process.argv = ["node", "cli.js", "-v"];
-    try {
-      await main();
-    } finally {
-      cap.restore();
-      process.argv = argv;
-    }
+    await main();
 
     expect(cap.stdout()).toContain(`plxm v${VERSION}`);
   });
@@ -246,49 +146,23 @@ describe("main() --version", () => {
 describe("main() help", () => {
   it("plxm --help prints root help", async () => {
     const { main } = await import("../cli.js");
-    const cap = captureConsole();
-    const argv = process.argv;
+    using cap = captureConsole();
+    using _argv = saveArgv();
 
     process.argv = ["node", "cli.js", "--help"];
-    try {
-      await main();
-    } finally {
-      cap.restore();
-      process.argv = argv;
-    }
+    await main();
 
     expect(cap.stdout()).toContain("Usage: plxm");
   });
 
   it("plxm help init prints init help", async () => {
     const { main } = await import("../cli.js");
-    const cap = captureConsole();
-    const argv = process.argv;
+    using cap = captureConsole();
+    using _argv = saveArgv();
 
     process.argv = ["node", "cli.js", "help", "init"];
-    try {
-      await main();
-    } finally {
-      cap.restore();
-      process.argv = argv;
-    }
+    await main();
 
     expect(cap.stdout()).toContain("Usage: plxm init");
-  });
-
-  it("plxm help upgrade shows extra help when provided", async () => {
-    const { main } = await import("../cli.js");
-    const cap = captureConsole();
-    const argv = process.argv;
-
-    process.argv = ["node", "cli.js", "help", "upgrade"];
-    try {
-      await main({ upgrade: "Usage: plxm upgrade" });
-    } finally {
-      cap.restore();
-      process.argv = argv;
-    }
-
-    expect(cap.stdout()).toContain("Usage: plxm upgrade");
   });
 });

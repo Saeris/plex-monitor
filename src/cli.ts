@@ -1,6 +1,10 @@
 import { spawn } from "node:child_process";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { isSea } from "node:sea";
 import mri from "mri";
 import * as p from "@clack/prompts";
+import pkg from "../package.json" with { type: "json" };
 import {
   CONFIG_PATH_DISPLAY,
   DEFAULT_PORT,
@@ -9,12 +13,20 @@ import {
   loadConfig,
   writeConfig
 } from "./config.js";
+import { LOG_PATH, logToFile } from "./log.js";
+import { startTray, WINDOWLESS_EXE } from "./tray.js";
 
 const TMDB_API_DOCS = "https://developer.themoviedb.org/docs/getting-started";
 const DISCORD_WEBHOOK_DOCS =
   "https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks";
 
-export const VERSION = "1.0.0";
+export const VERSION = pkg.version;
+
+// The windowless twin (plxmw.exe) has no console: it logs to a file and shows
+// a tray icon instead.
+const isWindowless =
+  process.platform === "win32" &&
+  path.basename(process.execPath).toLowerCase() === WINDOWLESS_EXE;
 
 // ── Help text ─────────────────────────────────────────────────────────────────
 
@@ -82,18 +94,13 @@ At least one option is required. Values are merged with the existing config.
   stop: `
 Usage: plxm stop
 
-Stops a server started with \`plxm --detach\`. Has no effect if no background
-server is running.
+Stops the background server, whether started at login or with
+\`plxm --detach\`. Has no effect if no background server is running.
 `.trim()
 };
 
-export function showHelp(
-  command = "",
-  help: Record<string, string> = HELP
-): void {
-  console.log(
-    help[command] ?? `Unknown command: ${command}\n\n${help[""] ?? ""}`
-  );
+export function showHelp(command = ""): void {
+  console.log(HELP[command] ?? `Unknown command: ${command}\n\n${HELP[""]}`);
 }
 
 // ── Commands ──────────────────────────────────────────────────────────────────
@@ -239,30 +246,30 @@ async function runConfigCommand(argv: string[]): Promise<void> {
 }
 
 async function runStop(): Promise<void> {
-  const { readPid, isRunning, clearPid } = await import("./server.js");
-  const pid = readPid();
-
-  if (pid === null || !isRunning(pid)) {
-    console.log("No background server is running.");
-    clearPid();
-    return;
-  }
-
-  process.kill(pid, "SIGTERM");
-  console.log(`Stopped server (pid ${pid}).`);
-  clearPid();
+  const { stopServer } = await import("./server.js");
+  const pid = await stopServer();
+  console.log(
+    pid === null
+      ? "No background server is running."
+      : `Stopped server (pid ${pid}).`
+  );
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
-export async function main(
-  extraHelp: Record<string, string> = {},
-  extraCommands?: (
-    command: string,
-    args: ReturnType<typeof mri>
-  ) => Promise<boolean>,
-  onServerStart?: () => void
-): Promise<void> {
+export async function main(): Promise<void> {
+  if (isWindowless) {
+    logToFile();
+    // The setup wizard below can't be answered without a console and would
+    // hang invisibly, so fail with a logged error instead.
+    try {
+      getConfig();
+    } catch (err) {
+      console.error(err instanceof Error ? err.message : err);
+      process.exit(1);
+    }
+  }
+
   const args = mri(process.argv.slice(2), {
     boolean: ["help", "version", "detach"],
     alias: { h: "help", v: "version", d: "detach" }
@@ -274,10 +281,9 @@ export async function main(
   }
 
   const command = args._[0];
-  const help = { ...HELP, ...extraHelp };
 
   if (command === "help" || args.help) {
-    showHelp(command === "help" ? (args._[1] ?? "") : command, help);
+    showHelp(command === "help" ? (args._[1] ?? "") : command);
     return;
   }
 
@@ -313,15 +319,9 @@ export async function main(
     return;
   }
 
-  // Delegate to extra commands (e.g. upgrade in SEA build).
-  if (command !== undefined && extraCommands) {
-    const handled = await extraCommands(command, args);
-    if (handled) return;
-  }
-
   if (command !== undefined) {
     console.error(`Unknown command: ${command}\n`);
-    showHelp("", help);
+    showHelp();
     process.exit(1);
   }
 
@@ -355,9 +355,21 @@ export async function main(
   }
 
   if (args.detach) {
-    const child = spawn(process.execPath, [process.argv[1]!], {
+    // In a SEA, argv[1] is the executable itself, so the binary is relaunched
+    // with no arguments. On Windows, prefer the windowless twin when installed
+    // so the background server gets a tray icon and log file.
+    const windowless = path.join(
+      path.dirname(process.execPath),
+      WINDOWLESS_EXE
+    );
+    const [file, fileArgs] =
+      process.platform === "win32" && fs.existsSync(windowless)
+        ? [windowless, []]
+        : [process.execPath, isSea() ? [] : [process.argv[1]!]];
+    const child = spawn(file, fileArgs, {
       detached: true,
       stdio: "ignore",
+      windowsHide: true,
       env: process.env
     });
     child.unref();
@@ -370,10 +382,20 @@ export async function main(
   }
 
   const { startServer } = await import("./server.js");
-  startServer(onServerStart);
+  startServer(() => {
+    // Without a console, the tray is the only sign the server is running and
+    // the only way to stop it short of `plxm stop`.
+    if (isWindowless) {
+      startTray({
+        tooltip: `plxm — listening on port ${getConfig().port}`,
+        logPath: LOG_PATH,
+        onExit: () => process.exit(0)
+      });
+    }
+  });
 }
 
-// Only run when executed directly, not when imported by tests or other modules.
+// Only run when executed directly, not when imported by tests.
 if (process.env["VITEST"] === undefined) {
   await main();
 }

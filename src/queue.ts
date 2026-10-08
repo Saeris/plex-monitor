@@ -23,6 +23,7 @@ async function flush(): Promise<void> {
     try {
       const payload = await createDiscordMessage(items[i]);
       await sendDiscordWebhook(discordWebhookUrl, payload);
+      console.log(`Sent: ${items[i].Metadata.title}`);
     } catch (err) {
       console.error(
         `Failed to send Discord notification for "${items[i].Metadata.title}":`,
