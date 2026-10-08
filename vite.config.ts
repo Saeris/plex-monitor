@@ -659,6 +659,11 @@ export default defineConfig({
   },
   // ── Testing (Vitest) ────────────────────────────────────────────────
   test: {
+    // Vitest v4 compatibility: preserve mock call history.
+    // Remove after tests no longer rely on calls from setup or earlier tests.
+    // https://viteplus.dev/guide/vitest-v5#remove-unneeded-compatibility-settings
+    // https://vitest.dev/guide/migration/#clearmocks-is-enabled-by-default
+    clearMocks: false,
     include: ["**/*.{test,spec}.{ts,tsx}"],
     exclude: ["**/node_modules/**", "**/dist/**"],
     environment: "node",
@@ -666,53 +671,25 @@ export default defineConfig({
     passWithNoTests: true
   },
   // ── Builds (tsdown) ─────────────────────────────────────────────────
-  pack: [
-    // JS bundle for npm/npx install path
-    {
-      entry: ["src/cli.ts"],
-      platform: "node",
-      format: ["esm"],
-      outDir: "dist",
-      clean: true,
-      minify: true,
-      banner: { js: "#!/usr/bin/env node" },
-      outputOptions: { inlineDynamicImports: true }
-    },
-    // Standalone executables for direct download — skipped when building for npm publish
-    ...(process.env.BUILD_BUNDLE_ONLY
-      ? []
-      : [
-          {
-            entry: ["src/cli.ts"],
-            platform: "node" as const,
-            exe: {
-              fileName: "plxm",
-              targets: process.env.PACK_TARGETS
-                ? process.env.PACK_TARGETS.split(",").map((t) => {
-                    const [platform, arch] = t.split("-") as [string, string];
-                    return {
-                      platform: platform as "linux" | "darwin" | "win",
-                      arch: arch as "x64" | "arm64",
-                      nodeVersion: "26.1.0"
-                    };
-                  })
-                : [
-                    {
-                      platform:
-                        (
-                          {
-                            win32: "win",
-                            darwin: "darwin",
-                            linux: "linux"
-                          } as const
-                        )[process.platform as "win32" | "darwin" | "linux"] ??
-                        "linux",
-                      arch: process.arch as "x64" | "arm64",
-                      nodeVersion: "26.1.0"
-                    }
-                  ]
-            }
-          }
-        ])
-  ]
+  // Standalone executable for this machine; `vp run plxm:install` installs it.
+  pack: {
+    entry: ["src/cli.ts"],
+    platform: "node",
+    // A SEA can only load node: builtins at runtime, so every dependency must
+    // be inlined (tsdown externalizes them by default).
+    deps: { alwaysBundle: [/./] },
+    exe: {
+      fileName: "plxm",
+      targets: [
+        {
+          platform:
+            ({ win32: "win", darwin: "darwin", linux: "linux" } as const)[
+              process.platform as "win32" | "darwin" | "linux"
+            ] ?? "linux",
+          arch: process.arch as "x64" | "arm64",
+          nodeVersion: "26.1.0"
+        }
+      ]
+    }
+  }
 });

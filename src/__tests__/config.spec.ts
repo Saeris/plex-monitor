@@ -1,14 +1,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi
-} from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 const TEST_CONFIG_PATH = path.join(
   os.tmpdir(),
@@ -16,31 +9,41 @@ const TEST_CONFIG_PATH = path.join(
 );
 process.env.PLEX_MONITOR_CONFIG_PATH = TEST_CONFIG_PATH;
 
+// ── Disposable helpers ────────────────────────────────────────────────────────
+
+function withCleanConfig(): { [Symbol.dispose](): void } {
+  try {
+    fs.unlinkSync(TEST_CONFIG_PATH);
+  } catch {
+    /* no-op */
+  }
+  return {
+    [Symbol.dispose]() {
+      try {
+        fs.unlinkSync(TEST_CONFIG_PATH);
+      } catch {
+        /* no-op */
+      }
+    }
+  };
+}
+
+afterEach(() => {
+  vi.resetModules();
+});
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
 describe("config", () => {
-  beforeEach(() => {
-    vi.resetModules();
-    try {
-      fs.unlinkSync(TEST_CONFIG_PATH);
-    } catch {
-      /* no-op */
-    }
-  });
-
-  afterEach(() => {
-    try {
-      fs.unlinkSync(TEST_CONFIG_PATH);
-    } catch {
-      /* no-op */
-    }
-  });
-
   describe("configExists", () => {
     it("returns false when no config file exists", async () => {
+      using _cfg = withCleanConfig();
       const { configExists } = await import("../config.js");
       expect(configExists()).toBe(false);
     });
 
     it("returns true after a config file is written", async () => {
+      using _cfg = withCleanConfig();
       const { configExists, writeConfig } = await import("../config.js");
       writeConfig({
         port: 3000,
@@ -53,6 +56,7 @@ describe("config", () => {
 
   describe("writeConfig", () => {
     it("writes partial values and merges with existing", async () => {
+      using _cfg = withCleanConfig();
       const { writeConfig } = await import("../config.js");
       writeConfig({ port: 3000 });
       writeConfig({ tmdbApiKey: "abc" });
@@ -64,6 +68,7 @@ describe("config", () => {
     });
 
     it("overwrites an existing field", async () => {
+      using _cfg = withCleanConfig();
       const { writeConfig } = await import("../config.js");
       writeConfig({ port: 3000 });
       writeConfig({ port: 4000 });
@@ -76,17 +81,20 @@ describe("config", () => {
 
   describe("loadConfig", () => {
     it("throws when config file does not exist", async () => {
+      using _cfg = withCleanConfig();
       const { loadConfig } = await import("../config.js");
       expect(() => loadConfig()).toThrow(/plex-monitor init/);
     });
 
     it("throws when required fields are missing", async () => {
+      using _cfg = withCleanConfig();
       const { loadConfig } = await import("../config.js");
       fs.writeFileSync(TEST_CONFIG_PATH, JSON.stringify({ port: 3000 }));
       expect(() => loadConfig()).toThrow(/Missing\/invalid fields/);
     });
 
     it("throws when port is out of range", async () => {
+      using _cfg = withCleanConfig();
       const { loadConfig } = await import("../config.js");
       fs.writeFileSync(
         TEST_CONFIG_PATH,
@@ -100,6 +108,7 @@ describe("config", () => {
     });
 
     it("throws when discordWebhookUrl is not a valid URL", async () => {
+      using _cfg = withCleanConfig();
       const { loadConfig } = await import("../config.js");
       fs.writeFileSync(
         TEST_CONFIG_PATH,
@@ -113,6 +122,7 @@ describe("config", () => {
     });
 
     it("returns the config when all fields are valid", async () => {
+      using _cfg = withCleanConfig();
       const { loadConfig } = await import("../config.js");
       fs.writeFileSync(
         TEST_CONFIG_PATH,
@@ -133,6 +143,7 @@ describe("config", () => {
 
   describe("getConfig singleton", () => {
     it("returns the same object on repeated calls", async () => {
+      using _cfg = withCleanConfig();
       const { getConfig } = await import("../config.js");
       fs.writeFileSync(
         TEST_CONFIG_PATH,

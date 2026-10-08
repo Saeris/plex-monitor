@@ -2,16 +2,15 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { execSync } from "node:child_process";
+import { isSea } from "node:sea";
 import * as p from "@clack/prompts";
+import { stopServer } from "./server.js";
+import { WINDOWLESS_EXE } from "./tray.js";
 
 const BINARY_NAME = "plxm";
 const LAUNCHD_LABEL = "io.github.saeris.plxm";
 const SYSTEMD_UNIT = "plxm.service";
 const TASK_NAME = "plxm";
-
-// Filled in at release time — points to the GitHub Releases download base URL.
-const RELEASE_BASE_URL =
-  "https://github.com/saeris/plex-monitor/releases/latest/download";
 
 function getBinDir(): string {
   if (process.platform === "win32") {
@@ -30,6 +29,42 @@ function getInstalledBinPath(): string {
   return path.join(getBinDir(), BINARY_NAME);
 }
 
+function getInstalledWindowlessPath(): string {
+  return path.join(getBinDir(), WINDOWLESS_EXE);
+}
+
+// PE optional header "Subsystem" field: 2 = Windows GUI, 3 = console.
+const PE_SUBSYSTEM_GUI = 2;
+
+/**
+ * Returns a copy of a Windows executable marked as a GUI-subsystem program.
+ * Windows only allocates a console window for console-subsystem programs, so
+ * the copy runs with no window at all (the `javaw.exe` / `pythonw.exe` trick).
+ */
+export function makeWindowless(exe: Buffer): Buffer {
+  const peOffset =
+    exe.length >= 0x40 && exe.toString("latin1", 0, 2) === "MZ"
+      ? exe.readUInt32LE(0x3c)
+      : -1;
+  if (
+    peOffset < 0 ||
+    exe.toString("latin1", peOffset, peOffset + 4) !== "PE\0\0"
+  ) {
+    throw new Error("Not a Windows executable");
+  }
+  const copy = Buffer.from(exe);
+  // Skip the 4-byte signature and 20-byte COFF header; Subsystem is at +68.
+  copy.writeUInt16LE(PE_SUBSYSTEM_GUI, peOffset + 24 + 68);
+  return copy;
+}
+
+function writeWindowlessCopy(): void {
+  fs.writeFileSync(
+    getInstalledWindowlessPath(),
+    makeWindowless(fs.readFileSync(getInstalledBinPath()))
+  );
+}
+
 function getLaunchdPlistPath(): string {
   return path.join(
     os.homedir(),
@@ -41,16 +76,6 @@ function getLaunchdPlistPath(): string {
 
 function getSystemdUnitPath(): string {
   return path.join(os.homedir(), ".config", "systemd", "user", SYSTEMD_UNIT);
-}
-
-function currentBinaryPath(): string {
-  return process.execPath;
-}
-
-function isSeaBinary(): boolean {
-  // When bundled as a Node SEA, the main script is embedded — process.argv[1]
-  // will be the same file as process.execPath.
-  return process.execPath === process.argv[1];
 }
 
 function exec(cmd: string): void {
@@ -154,11 +179,8 @@ function uninstallLinux(): void {
 // ── Windows (Task Scheduler) ─────────────────────────────────────────────────
 
 function taskXml(binaryPath: string): string {
-  // Run via node.exe explicitly so Task Scheduler doesn't open a visible
-  // console window when launching the .mjs bundle.
-  const isBundle = binaryPath.endsWith(".mjs");
-  const command = isBundle ? process.execPath : binaryPath;
-  const args = isBundle ? `<Arguments>"${binaryPath}"</Arguments>` : "";
+  // Note: <Hidden> only hides the task in the Task Scheduler UI. Pass the
+  // windowless twin so no console window appears.
   return `<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <Triggers>
@@ -186,8 +208,7 @@ function taskXml(binaryPath: string): string {
   </Settings>
   <Actions>
     <Exec>
-      <Command>"${command}"</Command>
-      ${args}
+      <Command>"${binaryPath}"</Command>
     </Exec>
   </Actions>
 </Task>
@@ -216,8 +237,9 @@ function uninstallWindows(): void {
     /* not registered */
   }
   const binDir = getBinDir();
-  const binPath = getInstalledBinPath();
-  if (fs.existsSync(binPath)) fs.unlinkSync(binPath);
+  for (const binPath of [getInstalledBinPath(), getInstalledWindowlessPath()]) {
+    if (fs.existsSync(binPath)) fs.unlinkSync(binPath);
+  }
   try {
     fs.rmdirSync(binDir);
   } catch {
@@ -260,12 +282,25 @@ export async function runInstall(
 ): Promise<void> {
   p.intro(`${BINARY_NAME} install`);
 
-  const src = currentBinaryPath();
+  // The service runs the self-contained binary; under plain Node there's no
+  // binary to copy and the service would depend on a particular Node install.
+  if (!isSea()) {
+    p.cancel(
+      "Install from the standalone binary instead: run `vp run plxm:install` in the repo."
+    );
+    process.exit(1);
+  }
+
+  const src = process.execPath;
   const dest = getInstalledBinPath();
   const binDir = getBinDir();
 
-  // Copy binary to install location (only meaningful for SEA downloads).
-  if (isSeaBinary() && src !== dest) {
+  // A running server locks its binary on Windows, so stop it before copying.
+  const stoppedPid = await stopServer();
+  if (stoppedPid !== null)
+    p.log.step(`Stopped running server (pid ${stoppedPid})`);
+
+  if (src !== dest) {
     p.log.step(`Copying binary to ${dest}`);
     fs.mkdirSync(binDir, { recursive: true });
     fs.copyFileSync(src, dest);
@@ -274,8 +309,18 @@ export async function runInstall(
     }
   }
 
-  // Register autostart service.
-  const binaryPath = isSeaBinary() ? dest : src;
+  // Windows autostart launches the windowless twin so no console appears.
+  if (process.platform === "win32") {
+    p.log.step(`Creating windowless binary ${getInstalledWindowlessPath()}`);
+    writeWindowlessCopy();
+  }
+
+  // Configure before registering: the service starts immediately, and the
+  // windowless binary exits if there's no valid config.
+  await runInitIfNeeded();
+
+  const binaryPath =
+    process.platform === "win32" ? getInstalledWindowlessPath() : dest;
   p.log.step("Registering autostart service");
   if (process.platform === "darwin") {
     installMacos(binaryPath);
@@ -289,20 +334,15 @@ export async function runInstall(
     );
   }
 
-  // Add to PATH for SEA installs on POSIX systems.
-  if (isSeaBinary()) {
-    if (process.platform === "win32") {
-      addToPathWindows(binDir);
-      p.log.info(`Added ${binDir} to your user PATH (restart your terminal)`);
-    } else {
-      addToPathShellRc(binDir);
-      p.log.info(
-        `Added ${binDir} to PATH in your shell rc files (restart your terminal or run: source ~/.bashrc)`
-      );
-    }
+  if (process.platform === "win32") {
+    addToPathWindows(binDir);
+    p.log.info(`Added ${binDir} to your user PATH (restart your terminal)`);
+  } else {
+    addToPathShellRc(binDir);
+    p.log.info(
+      `Added ${binDir} to PATH in your shell rc files (restart your terminal or run: source ~/.bashrc)`
+    );
   }
-
-  await runInitIfNeeded();
 
   p.outro("Installation complete. plxm will start automatically on login.");
 }
@@ -322,85 +362,4 @@ export async function runUninstall(): Promise<void> {
   p.outro(
     `${BINARY_NAME} has been uninstalled. Your config file at ${path.join(os.homedir(), ".plex-monitor.config.json")} was not removed.`
   );
-}
-
-export async function runUpgrade(): Promise<void> {
-  p.intro(`${BINARY_NAME} upgrade`);
-
-  const platform = process.platform;
-  const arch = process.arch;
-
-  const platformMap: Record<string, string> = {
-    darwin: "darwin",
-    linux: "linux",
-    win32: "win"
-  };
-  const archMap: Record<string, string> = {
-    x64: "x64",
-    arm64: "arm64"
-  };
-
-  const plat = platformMap[platform];
-  const ar = archMap[arch];
-
-  if (!plat || !ar) {
-    p.log.error(`Unsupported platform: ${platform}/${arch}`);
-    process.exit(1);
-  }
-
-  const ext = platform === "win32" ? ".exe" : "";
-  const fileName = `${BINARY_NAME}-${plat}-${ar}${ext}`;
-  const url = `${RELEASE_BASE_URL}/${fileName}`;
-
-  p.log.step(`Downloading latest release from:\n  ${url}`);
-
-  const response = await fetch(url);
-  if (!response.ok) {
-    p.log.error(`Download failed: ${response.status} ${response.statusText}`);
-    process.exit(1);
-  }
-
-  const dest = getInstalledBinPath();
-  const tmp = `${dest}.tmp`;
-
-  const buffer = await response.arrayBuffer();
-  fs.writeFileSync(tmp, Buffer.from(buffer));
-  if (platform !== "win32") fs.chmodSync(tmp, 0o755);
-
-  // Stop service before replacing binary.
-  p.log.step("Stopping service");
-  if (platform === "darwin") {
-    try {
-      exec(`launchctl stop ${LAUNCHD_LABEL}`);
-    } catch {
-      /* not running */
-    }
-  } else if (platform === "linux") {
-    try {
-      exec(`systemctl --user stop ${SYSTEMD_UNIT}`);
-    } catch {
-      /* not running */
-    }
-  } else if (platform === "win32") {
-    try {
-      exec(`schtasks /End /TN "${TASK_NAME}"`);
-    } catch {
-      /* not running */
-    }
-  }
-
-  fs.renameSync(tmp, dest);
-  p.log.step("Binary replaced");
-
-  // Restart service.
-  p.log.step("Restarting service");
-  if (platform === "darwin") {
-    exec(`launchctl start ${LAUNCHD_LABEL}`);
-  } else if (platform === "linux") {
-    exec(`systemctl --user start ${SYSTEMD_UNIT}`);
-  } else if (platform === "win32") {
-    exec(`schtasks /Run /TN "${TASK_NAME}"`);
-  }
-
-  p.outro(`${BINARY_NAME} upgraded successfully.`);
 }

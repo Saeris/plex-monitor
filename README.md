@@ -2,7 +2,6 @@
 
 # 📺 Plex Monitor
 
-[![npm version][npm_badge]][npm]
 [![CI status][ci_badge]][ci]
 
 Listens for [Plex][plex] webhooks and posts richly formatted notifications to [Discord][discord] when new movies or TV shows are added to your library.
@@ -13,27 +12,17 @@ Listens for [Plex][plex] webhooks and posts richly formatted notifications to [D
 
 ## 📦 Installation
 
-### Global (npm)
+Clone the repo, then build and install the single-file executable for your platform:
 
 ```bash
-npm install -g @saeris/plex-monitor
+vp install
+vp run plxm:install
 ```
 
-After installing, run the setup wizard:
+To update later, `vp run plxm:upgrade` pulls the latest changes, rebuilds, and reinstalls (stopping and restarting the running service).
 
-```bash
-plxm install
-```
-
-### Single-file executable
-
-Download the binary for your platform from the [latest release][releases], then run:
-
-```bash
-./plxm install
-```
-
-Available targets: `plxm-linux-x64`, `plxm-linux-arm64`, `plxm-darwin-x64`, `plxm-darwin-arm64`, `plxm-win-x64.exe`
+> [!NOTE]
+> On Windows, the autostart service runs `plxmw.exe`, a copy of `plxm.exe` that opens no console window. It shows a system tray icon instead, whose menu lets you open the log (`~/.plxm.log`) or exit the service.
 
 ---
 
@@ -45,7 +34,6 @@ plxm [command] [options]
 Commands:
   install              Copy binary to PATH, register autostart service, run init if needed
   uninstall            Stop and remove the autostart service
-  upgrade              Download the latest release and restart the service
   init                 Interactive configuration wizard
   config [options]     Update configuration values non-interactively
   stop                 Stop a running background server
@@ -60,11 +48,11 @@ Run `plxm help <command>` for command-specific help.
 
 ### First-time setup
 
-`plxm install` handles the full onboarding:
+`vp run plxm:install` builds the binary and runs `plxm install`, which handles the full onboarding:
 
 1. Copies the binary to `~/.local/bin` (Linux/macOS) or `%LOCALAPPDATA%\Programs\plxm` (Windows) and adds it to your PATH
-2. Registers an autostart service so the server starts on login
-3. Runs `plxm init` if no config file exists yet
+2. Runs `plxm init` if no config file exists yet
+3. Registers an autostart service so the server starts on login, and starts it
 
 ### Running the server
 
@@ -179,11 +167,8 @@ Once the server is running, point Plex at it:
 
 Released under the [MIT license][license] © [Drake Costa][personal-website].
 
-[npm_badge]: https://img.shields.io/npm/v/@saeris/plex-monitor.svg?style=flat
-[npm]: https://www.npmjs.com/package/@saeris/plex-monitor
 [ci_badge]: https://github.com/saeris/plex-monitor/actions/workflows/ci.yml/badge.svg
 [ci]: https://github.com/saeris/plex-monitor/actions/workflows/ci.yml
-[releases]: https://github.com/saeris/plex-monitor/releases/latest
 [plex]: https://www.plex.tv
 [discord]: https://discord.com
 [tmdb_api_docs]: https://developer.themoviedb.org/docs/getting-started
